@@ -22,8 +22,35 @@ pipeline {
 
             aws sts get-caller-identity
 
-            terraform init
-            terraform plan
+            stage('Terraform Init') {
+      steps {
+        sh """
+          terraform init
+        """
+      }
+    }
+
+    stage('Terraform Plan') {
+      steps {
+        sh """
+          terraform plan \
+            -var instance_ami=${params.INSTANCE_AMI} \
+            -var instance_type=${params.INSTANCE_TYPE} \
+            -var instance_name=${params.INSTANCE_NAME}
+        """
+      }
+    }
+
+    stage('Terraform Apply') {
+      steps {
+        sh """
+          terraform apply -auto-approve \
+            -var instance_ami=${params.INSTANCE_AMI} \
+            -var instance_type=${params.INSTANCE_TYPE} \
+            -var instance_name=${params.INSTANCE_NAME}
+        """
+      }
+    }
           '''
         }
       }
