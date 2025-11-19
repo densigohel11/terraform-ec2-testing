@@ -9,24 +9,28 @@ pipeline {
   stages {
 
     stage('Terraform Init/Plan') {
-      steps {
-        withCredentials([[
-          $class: 'AmazonWebServicesCredentialsBinding',
-          credentialsId: 'aws-creds',
-          accessKeyVariable: 'AWS_ACCESS_KEY_ID',
-          secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
-        ]]) {
+    withCredentials([usernamePassword(
+        credentialsId: 'aws-creds',
+        passwordVariable: 'AWS_SECRET_ACCESS_KEY',
+        usernameVariable: 'AWS_ACCESS_KEY_ID'
+    )]) {
 
-          sh '''
+        // DEBUG → verify they load
+        sh '''
             echo "AWS_ACCESS_KEY_ID -> $AWS_ACCESS_KEY_ID"
-
+            echo "AWS_SECRET_ACCESS_KEY -> (hidden)"
             aws sts get-caller-identity
+        '''
 
-            
-          '''
-        }
-      }
+        // 🟢 FIX → run terraform *inside* the same block
+        sh '''
+            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+            export AWS_DEFAULT_REGION=us-east-1
+
+        '''
     }
+}
       stage('Terraform Init') {
       steps {
         sh """
