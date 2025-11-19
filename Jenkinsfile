@@ -8,7 +8,7 @@ pipeline {
 
   stages {
 
-    stage('Terraform aws-creds check') {
+    stage('Terraform Init/Plan') {
       steps {
         withCredentials([[
           $class: 'AmazonWebServicesCredentialsBinding',
