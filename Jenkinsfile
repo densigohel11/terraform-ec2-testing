@@ -11,6 +11,7 @@ pipeline {
     AWS_ACCESS_KEY_ID     = credentials('aws-creds')    // Jenkins AWS credential ID
         AWS_SECRET_ACCESS_KEY = credentials('aws-creds')
     AWS_REGION            = "us-east-1"
+    PATH = "/usr/local/bin:/opt/homebrew/bin:${env.PATH}"
   }
 
   stages {
