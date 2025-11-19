@@ -3,7 +3,7 @@ terraform {
     bucket         = "demo-jenkins-test"
     key            = "ec2/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "Users"
+    dynamodb_table = "terraform-locks"
     encrypt        = true
   }
 }
