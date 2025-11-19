@@ -1,65 +1,58 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    AWS_REGION = "us-east-1"
-    PATH = "/usr/local/bin:/opt/homebrew/bin:${env.PATH}"
-  }
+    parameters {
+        string(name: 'INSTANCE_TYPE', defaultValue: 't2.micro', description: 'EC2 Instance Type')
+        string(name: 'AMI_ID', defaultValue: 'ami-0c94855ba95c71c99', description: 'AMI ID')
+        string(name: 'KEY_NAME', defaultValue: 'my-key', description: 'Key Pair Name')
+        string(name: 'INSTANCE_NAME', defaultValue: 'Jenkins-EC2', description: 'EC2 Instance Name')
+    }
 
-  stages {
+    stages {
 
-    stage('Terraform Init/Plan') {
-    withCredentials([usernamePassword(
-        credentialsId: 'aws-creds',
-        passwordVariable: 'AWS_SECRET_ACCESS_KEY',
-        usernameVariable: 'AWS_ACCESS_KEY_ID'
-    )]) {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
 
-        // DEBUG → verify they load
-        sh '''
-            echo "AWS_ACCESS_KEY_ID -> $AWS_ACCESS_KEY_ID"
-            echo "AWS_SECRET_ACCESS_KEY -> (hidden)"
-            aws sts get-caller-identity
-        '''
+        stage('Terraform Init/Plan/Apply') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'aws-creds',
+                        usernameVariable: 'AWS_ACCESS_KEY_ID',
+                        passwordVariable: 'AWS_SECRET_ACCESS_KEY'
+                    )
+                ]) {
 
-        // 🟢 FIX → run terraform *inside* the same block
-        sh '''
-            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-            export AWS_DEFAULT_REGION=us-east-1
+                    sh '''
+                        echo ">> AWS Credentials Verified"
+                        aws sts get-caller-identity
 
-        '''
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=us-east-1
+
+                        echo ">> Running Terraform Init"
+                        terraform init
+
+                        echo ">> Running Terraform Plan"
+                        terraform plan \
+                            -var "instance_type=${INSTANCE_TYPE}" \
+                            -var "ami_id=${AMI_ID}" \
+                            -var "key_name=${KEY_NAME}" \
+                            -var "instance_name=${INSTANCE_NAME}"
+
+                        echo ">> Applying Terraform"
+                        terraform apply -auto-approve \
+                            -var "instance_type=${INSTANCE_TYPE}" \
+                            -var "ami_id=${AMI_ID}" \
+                            -var "key_name=${KEY_NAME}" \
+                            -var "instance_name=${INSTANCE_NAME}"
+                    '''
+                }
+            }
+        }
     }
 }
-  }
-      stage('Terraform Init') {
-      steps {
-        sh """
-          terraform init
-        """
-      }
-    }
-
-    stage('Terraform Plan') {
-      steps {
-        sh """
-          terraform plan \
-            -var instance_ami=${params.INSTANCE_AMI} \
-            -var instance_type=${params.INSTANCE_TYPE} \
-            -var instance_name=${params.INSTANCE_NAME}
-        """
-      }
-    }
-
-    stage('Terraform Apply') {
-      steps {
-        sh """
-          terraform apply -auto-approve \
-            -var instance_ami=${params.INSTANCE_AMI} \
-            -var instance_type=${params.INSTANCE_TYPE} \
-            -var instance_name=${params.INSTANCE_NAME}
-        """
-      }
-    }
-    }
-  }
