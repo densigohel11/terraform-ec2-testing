@@ -1,53 +1,48 @@
 pipeline {
-    agent any
+  agent any
 
-    parameters {
-        string(name: 'INSTANCE_TYPE', defaultValue: 't2.micro')
-        string(name: 'AMI_ID', defaultValue: 'ami-0c94855ba95c71c99')
-        string(name: 'KEY_NAME', defaultValue: 'my-key')
-        string(name: 'INSTANCE_NAME', defaultValue: 'Jenkins-EC2')
+  parameters {
+    string(name: 'INSTANCE_AMI', defaultValue: 'ami-0c02fb55956c7d316', description: 'Enter AMI ID')
+    string(name: 'INSTANCE_TYPE', defaultValue: 't2.micro', description: 'Enter EC2 Instance Type')
+    string(name: 'INSTANCE_NAME', defaultValue: 'MyEC2Instance', description: 'Enter instance tag name')
+  }
+
+  environment {
+    AWS_ACCESS_KEY_ID     = credentials('aws-creds')    // Jenkins AWS credential ID
+        AWS_SECRET_ACCESS_KEY = credentials('aws-creds')
+    AWS_REGION            = "us-east-1"
+  }
+
+  stages {
+
+    stage('Terraform Init') {
+      steps {
+        sh """
+          terraform init
+        """
+      }
     }
 
-    stages {
-
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Terraform Init/Plan/Apply') {
-            steps {
-                withCredentials([
-                    [$class: 'AmazonWebServicesCredentialsBinding',
-                     credentialsId: 'aws-creds']
-                ]) {
-
-                    sh '''
-                        echo ">> AWS Credentials Verified"
-                        aws sts get-caller-identity
-
-                        export AWS_DEFAULT_REGION=us-east-1
-
-                        echo ">> Terraform Init"
-                        terraform init
-
-                        echo ">> Terraform Plan"
-                        terraform plan \
-                            -var "instance_type=${INSTANCE_TYPE}" \
-                            -var "ami_id=${AMI_ID}" \
-                            -var "key_name=${KEY_NAME}" \
-                            -var "instance_name=${INSTANCE_NAME}"
-
-                        echo ">> Terraform Apply"
-                        terraform apply -auto-approve \
-                            -var "instance_type=${INSTANCE_TYPE}" \
-                            -var "ami_id=${AMI_ID}" \
-                            -var "key_name=${KEY_NAME}" \
-                            -var "instance_name=${INSTANCE_NAME}"
-                    '''
-                }
-            }
-        }
+    stage('Terraform Plan') {
+      steps {
+        sh """
+          terraform plan \
+            -var instance_ami=${params.INSTANCE_AMI} \
+            -var instance_type=${params.INSTANCE_TYPE} \
+            -var instance_name=${params.INSTANCE_NAME}
+        """
+      }
     }
+
+    stage('Terraform Apply') {
+      steps {
+        sh """
+          terraform apply -auto-approve \
+            -var instance_ami=${params.INSTANCE_AMI} \
+            -var instance_type=${params.INSTANCE_TYPE} \
+            -var instance_name=${params.INSTANCE_NAME}
+        """
+      }
+    }
+  }
 }
