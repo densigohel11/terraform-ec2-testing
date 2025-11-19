@@ -8,8 +8,8 @@ pipeline {
   }
 
   environment {
-  //  AWS_ACCESS_KEY_ID     = credentials('aws-creds').AWS_ACCESS_KEY_ID
-  //  AWS_SECRET_ACCESS_KEY = credentials('aws-creds').AWS_SECRET_ACCESS_KEY
+    AWS_ACCESS_KEY_ID     = credentials('aws-creds').AWS_ACCESS_KEY_ID
+   AWS_SECRET_ACCESS_KEY = credentials('aws-creds').AWS_SECRET_ACCESS_KEY
   //  PATH = "/usr/local/bin/terraform"
     PATH = "/usr/local/bin:/opt/homebrew/bin:${env.PATH}"
 
@@ -17,7 +17,14 @@ pipeline {
   }
 
   stages {
-
+stage('Debug AWS Creds') {
+  steps {
+    sh '''
+      echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
+      aws sts get-caller-identity
+    '''
+  }
+}
     stage('Deploy') {
             steps {
                 withCredentials([
