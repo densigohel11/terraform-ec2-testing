@@ -10,6 +10,7 @@ pipeline {
   environment {
   //  AWS_ACCESS_KEY_ID     = credentials('aws-creds').AWS_ACCESS_KEY_ID
   //  AWS_SECRET_ACCESS_KEY = credentials('aws-creds').AWS_SECRET_ACCESS_KEY
+    PATH = "/usr/local/bin/terraform"
     AWS_REGION            = "us-east-1"
   }
 
