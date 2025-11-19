@@ -1,21 +1,6 @@
 pipeline {
   agent any
 
-  stages {
-        stage('Deploy') {
-            steps {
-                withCredentials([
-                    [$class: 'AmazonWebServicesCredentialsBinding', 
-                     credentialsId: 'aws-creds']
-                ]) {
-                    sh '''
-                        echo "AWS Access Key: $AWS_ACCESS_KEY_ID"
-                        echo "AWS Secret Key: $AWS_SECRET_ACCESS_KEY"
-                    '''
-                }
-            }
-        }
-    }
   parameters {
     string(name: 'INSTANCE_AMI', defaultValue: 'ami-0c02fb55956c7d316', description: 'Enter AMI ID')
     string(name: 'INSTANCE_TYPE', defaultValue: 't2.micro', description: 'Enter EC2 Instance Type')
@@ -30,6 +15,20 @@ pipeline {
 
   stages {
 
+    stage('Deploy') {
+            steps {
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding', 
+                     credentialsId: 'aws-creds']
+                ]) {
+                    sh '''
+                        echo "AWS Access Key: $AWS_ACCESS_KEY_ID"
+                        echo "AWS Secret Key: $AWS_SECRET_ACCESS_KEY"
+                    '''
+                }
+            }
+        } 
+    
     stage('Terraform Init') {
       steps {
         sh """
