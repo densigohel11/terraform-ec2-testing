@@ -26,6 +26,7 @@ pipeline {
           '''
         }
       }
+    }
       stage('Terraform Init') {
       steps {
         sh """
@@ -57,4 +58,3 @@ pipeline {
     }
     }
   }
-}
