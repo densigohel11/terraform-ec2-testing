@@ -35,16 +35,15 @@ stage('Debug AWS Creds') {
   secretKeyVariable: 'AWS_SECRET_ACCESS_KEY'
 ]]) {
 
-  sh """
-    echo "Testing AWS credentials"
-    echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
+  sh '''
+    echo "AWS_ACCESS_KEY_ID -> $AWS_ACCESS_KEY_ID"
+    echo "AWS_SECRET_ACCESS_KEY -> (hidden)"
 
-    aws sts get-caller-identity --output json
+    aws sts get-caller-identity
 
-    terraform init
-    terraform plan -input=false
-  """
+  '''
 }
+
 
              /*   withCredentials([
                     [$class: 'AmazonWebServicesCredentialsBinding', 
